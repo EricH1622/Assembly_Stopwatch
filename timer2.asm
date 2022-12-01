@@ -2,10 +2,14 @@
 ; Compile with: nasm -f elf timer.asm
 ; Link with (64 bit systems require elf_i386 option): ld -m elf_i386 timer.o -o timer
 ; Run with: ./timer
+
+; iPrint function referenced from https://asmtutor.com/
  
 ;------------------------------------------
 ; void iprint(Integer number)
 ; Integer printing function (itoa)
+
+; Moving any current values in registers to preserve data while they are in use.
 iprint:
     push    eax             ; preserve eax on the stack to be restored after function runs
     push    ecx             ; preserve ecx on the stack to be restored after function runs
@@ -13,23 +17,24 @@ iprint:
     push    esi             ; preserve esi on the stack to be restored after function runs
     mov     ecx, 0          ; counter of how many bytes we need to print in the end
  
+; Pushes all ascii characters until we hit null.
 divideLoop:
     inc     ecx             ; count each byte to print - number of characters
     mov     edx, 0          ; empty edx
-    mov     esi, 10         ; mov 10 into esi
-    idiv    esi             ; divide eax by esi
+    mov     esi, 10         ; mov 10 into esi, prepping registers
+    idiv    esi             ; divide eax by esi,  the remainder will go to edx abd answer goes into eax
     add     edx, 48         ; convert edx to it's ascii representation - edx holds the remainder after a divide instruction
     push    edx             ; push edx (string representation of an intger) onto the stack
     cmp     eax, 0          ; can the integer be divided anymore?
-    jnz     divideLoop      ; jump if not zero to the label divideLoop
+    jnz     divideLoop      ; jump to the label divideLoop if flag in previous line is NOT 0
  
 printLoop:
     dec     ecx             ; count down each byte that we put on the stack
     mov     eax, esp        ; mov the stack pointer into eax for printing
-    call    sprint          ; call our string print function
+    call    sprint          ; call our string print function, prints 1 ascii character at a time
     pop     eax             ; remove last character from the stack to move esp forward
-    cmp     ecx, 0          ; have we printed all bytes we pushed onto the stack?
-    jnz     printLoop       ; jump is not zero to the label printLoop
+    cmp     ecx, 0          ; have we printed all bytes we pushed onto the stack? "check if count in ecx is 0"
+    jnz     printLoop       ; jump to the label printLoop if flag in previous line in NOT 0.
  
     pop     esi             ; restore esi from the value we pushed onto the stack at the start
     pop     edx             ; restore edx from the value we pushed onto the stack at the start
@@ -42,17 +47,17 @@ printLoop:
 ; int slen(String message)
 ; String length calculation function
 slen:
-    push    ebx
+    push    ebx                 ;saving value in ebx
     mov     ebx, eax
  
 nextchar:
-    cmp     byte [eax], 0
-    jz      finished
-    inc     eax
-    jmp     nextchar
+    cmp     byte [eax], 0       ; comparing byte value of eax until we reach null character '0' which denotes end of the string
+    jz      finished            ; flag from previous line is 0 we have reached the end of the string
+    inc     eax                 ; incrementing through string
+    jmp     nextchar            ; loop to start of nextchar
  
 finished:
-    sub     eax, ebx
+    sub     eax, ebx            ; recovering values stored on stack into their registers.
     pop     ebx
     ret
  
@@ -60,22 +65,24 @@ finished:
 ;------------------------------------------
 ; void sprint(String message)
 ; String printing function
+
+
 sprint:
-    push    edx
+    push    edx         ;Preserving values in registers by storing them on stack LIFO
     push    ecx
     push    ebx
     push    eax
     call    slen
  
-    mov     edx, eax
+    mov     edx, eax    ;edx is message length, 
     pop     eax
  
-    mov     ecx, eax
-    mov     ebx, 1
-    mov     eax, 4
-    int     80h
+    mov     ecx, eax    ; outs address where to start printing into ecx
+    mov     ebx, 1      ; where to write to, 1 is standard output stdout
+    mov     eax, 4      ;opcode for sys_write
+    int     80h         ;return command back to kernal
  
-    pop     ebx
+    pop     ebx     ;return original values stored on stack to their appropriate registers. LIFO
     pop     ecx
     pop     edx
     ret
