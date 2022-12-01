@@ -302,3 +302,4 @@ exitLocation:
 newFastest:
     mov     [fastestLap], eax;  ;move the current laptime into fastLap
     jmp     returnSpot          ;go back to where we left the code
+
