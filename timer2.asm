@@ -101,10 +101,9 @@ oMsg        db      'Press l to finish lap and q to quit', 10   ; Open message t
 oMsg_l      equ     $ - oMsg                            ; length of openning message
  
 SECTION .bss                                            ; reservering space in memory for future data
-sinput:     resb    255                                 ; reserve a 255 byte space in memory for the users input string
-sinput2:    resb    1                                   ; For holding 1 character;
-var1:       resb 4                                      ; reserve 4 bytes for initial timestamp 
-var2:       resb 4                                      ; reserve 4 bytes for timestamp after 'enter' press by user
+sinput2:    resb 1                                      ; For holding 1 character;
+iTime:      resb 4                                      ; reserve 4 bytes for initial timestamp 
+cTime:      resb 4                                      ; reserve 4 bytes for timestamp after 'enter' press by user
 fastestLap  resb 4                                      ; reserve 4 bytes to hold time of fastest lap
 lastTimestamp resb 4                                    ; reserver 4 bytes to hold the last timestamp
 totalLaps   resb 4                                      ; reserve 4 bytes to hold total laps;
@@ -116,19 +115,19 @@ global  _start
  
 _start:
 
-    mov     eax, 13                 ; invoke SYS_TIME (kernel opcode 13) (get timestamp)
+    mov     eax, 13                 ; invoke SYS_TIME (kernel opcode 13) (get timestamp) It is second since the start of time which is January 1st 1970
     int     80h                     ; call the kernel
-    mov     [var1], eax             ; move initial timestamp in eax to var1
+    mov     [iTime], eax            ; move initial timestamp in eax to var1
     mov     [lastTimestamp], eax    ; Set the initial first lap time to starting time
 
     ; Print of that you are starting the stopwatch;
     mov	    edx, msg1_l         ;message length
     mov	    ecx, msg1           ;message to write
-    mov	    ebx,1               ;file descriptor (stdout)
-    mov     eax,4               ;system call number (sys_write)
+    mov	    ebx, 1              ;file descriptor (stdout)
+    mov     eax, 4              ;system call number (sys_write)
     int	    0x80                ;call kernel
     
-        ; Print out the instructions to use the stopwatch
+    ; Print out the instructions to use the stopwatch
     mov	    edx, oMsg_l         ;message length
     mov	    ecx, oMsg           ;message to write
     mov	    ebx,1               ;file descriptor (stdout)
@@ -138,11 +137,7 @@ _start:
     
     mov     [fastestLap], byte 255  ; setting fastest lap to a high number
     mov     eax, 0                  ; put 0 in eax
-    mov     [totalLaps], eax       ; total laps
-
-  ;  mov     eax, msg1       ; move our 'starting stopwatch' message string into eax for printing
-  ;  call    sprintLF        ; call string printing function with linefeed
-
+    mov     [totalLaps], eax        ; total laps
 
 
 
@@ -153,7 +148,7 @@ _start:
     mov     ecx, sinput2    ; reserved space to store our input (known as a buffer)
     mov     ebx, 0          ; write to the STDIN file
     mov     eax, 3          ; invoke SYS_READ (kernel opcode 3)
-    int     80h
+    int     80h             ; command to kernal
 
 
     push    eax             ; save eax on the stack
@@ -179,11 +174,10 @@ _start:
     pop     eax                 ; return eax from the stack
     
     ; Print out the total time so far
-    mov     [var2], eax         ; move the timestamp after user presses enter to var2
-    mov     eax, [var2]         ; move var2 (timestamp after enter press) into eax register
-    mov     ebx, [var1]         ; move var1 (initialy timestamp at program start) into ebx register
+    mov     [cTime], eax        ; move the timestamp after user presses enter to cTime
+    mov     ebx, [iTime]        ; move iTime (initialy timestamp at program start) into ebx register
     sub     eax, ebx            ; subtraction function of ebx (initial timestamp) from eax (timestamp after 'enter' press)
-    call    iprint             ; call integer print function to print out seconds difference
+    call    iprint              ; call integer print function to print out seconds difference
     
     ; Print out "seconds "
     mov	    edx, msg2_l         ;message length
@@ -203,12 +197,12 @@ _start:
 
     
     ; Print out the time for that lap
-    mov     eax, [var2]         ; Put the current timestamp into eax register
+    mov     eax, [cTime]         ; Put the current timestamp into eax register
     mov     ebx, [lastTimestamp]; Put the timestamp of end of last lap into ebx register
     sub     eax, ebx            ; get the difference between the two timp stamps
     
-    cmp     eax, [fastestLap]
-    jl      newFastest
+    cmp     eax, [fastestLap]   ; compares eax to fastestLap
+    jl      newFastest          ; Checks the less flag if it was set go to newFastest
 returnSpot:
 
     call iprint             ; call integer print function to print out seconds difference
@@ -222,12 +216,13 @@ returnSpot:
 
 
     ; Save the currentTimestamp into the lastTimestamp
-    mov     eax, [var2]         ; currentTime into eax register
+    mov     eax, [cTime]         ; currentTime into eax register
     mov     [lastTimestamp], eax    ; currentTime stored into lastTimestamp
     
-    mov     eax, [totalLaps]
-    inc     eax
-    mov     [totalLaps], eax
+    ; Increase the lap count by one
+    mov     eax, [totalLaps]    ; moves the total laps amount into eax
+    inc     eax                 ; increase the amount in eax by one: add eax, 1 would do same thing
+    mov     [totalLaps], eax    ; save the new lap amount
     
     jmp     loopName            ; Jump to the loop section
     
@@ -244,8 +239,8 @@ exitLocation:
     pop     eax                 ; return eax from the stack
     
     ; Print out the total time so far
-    mov     eax, [var2]         ; move var2 (timestamp after enter press) into eax register
-    mov     ebx, [var1]         ; move var1 (initialy timestamp at program start) into ebx register
+    mov     eax, [cTime]         ; move cTime (timestamp after enter press) into eax register
+    mov     ebx, [iTime]         ; move iTime (initialy timestamp at program start) into ebx register
     sub     eax, ebx            ; subtraction function of ebx (initial timestamp) from eax (timestamp after 'enter' press)
     call    iprint              ; call integer print function to print out seconds difference
     
@@ -263,8 +258,9 @@ exitLocation:
     mov 	eax,4               ;system call number (sys_write)
     int 	0x80                ;call kernel
     
-    mov     eax, [totalLaps]
-    call    iprint
+    ; Print out the totalLaps amount
+    mov     eax, [totalLaps]    ; get the total lap amounts
+    call    iprint              ; print them
 
     ; Print out "Fastest laptime "
     mov	    edx, fMsg_l         ;message length
@@ -273,6 +269,7 @@ exitLocation:
     mov 	eax,4               ;system call number (sys_write)
     int 	0x80                ;call kernel
     
+    ; Print out fastest lap amount
     mov     eax, [fastestLap]
     call    iprint
     
@@ -290,10 +287,10 @@ exitLocation:
     mov	    eax,4               ;system call number (sys_write)
     int	    0x80                ;call kernel
 
-    
+    ; Quit the program   
     mov     ebx, 0              ;exit code
     mov     eax, 1              ;system call number to quit
-    int     80h
+    int     80h                 ; give control to kernal
    
 newFastest:
     mov     [fastestLap], eax;  ;move the current laptime into fastLap
