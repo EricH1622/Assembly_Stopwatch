@@ -40,7 +40,7 @@ printLoop:
     pop     edx             ; restore edx from the value we pushed onto the stack at the start
     pop     ecx             ; restore ecx from the value we pushed onto the stack at the start
     pop     eax             ; restore eax from the value we pushed onto the stack at the start
-    ret
+    ret                     ; return to where iprint is called. (line 187)
  
 
 ;------------------------------------------
@@ -48,7 +48,7 @@ printLoop:
 ; String length calculation function
 slen:
     push    ebx                 ;saving value in ebx
-    mov     ebx, eax
+    mov     ebx, eax            ; 
  
 nextchar:
     cmp     byte [eax], 0       ; comparing byte value of eax until we reach null character '0' which denotes end of the string
@@ -75,12 +75,12 @@ sprint:
     call    slen
  
     mov     edx, eax    ;edx is message length, 
-    pop     eax
+    pop     eax         ; restore value for eax
  
     mov     ecx, eax    ; outs address where to start printing into ecx
     mov     ebx, 1      ; where to write to, 1 is standard output stdout
     mov     eax, 4      ;opcode for sys_write
-    int     80h         ;return command back to kernal
+    int     80h         ;return control to the kernal to execute
  
     pop     ebx     ;return original values stored on stack to their appropriate registers. LIFO
     pop     ecx
