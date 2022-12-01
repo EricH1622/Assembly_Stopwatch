@@ -1,3 +1,6 @@
+; Authors: Darren Luck A00964037
+;          Eric Hemming A01290673
+;          Kiefer Thom  A01284069
 ; Timer 
 ; Compile with: nasm -f elf timer.asm
 ; Link with (64 bit systems require elf_i386 option): ld -m elf_i386 timer.o -o timer
