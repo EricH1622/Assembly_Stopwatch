@@ -1,4 +1,4 @@
-# Assemble Stopwatch Project Readme
+# Assemble Stopwatch Project
 
 ## Authors
 
