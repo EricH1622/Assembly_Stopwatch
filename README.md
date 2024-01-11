@@ -2,9 +2,9 @@
 
 ## Authors
 
-- Darren Luck (A00964037)
-- Eric Hemming (A01290673)
-- Kiefer Thom (A01284069)
+- Darren Luck
+- Eric Hemming 
+- Kiefer Thom 
 
 ## Project Description
 
